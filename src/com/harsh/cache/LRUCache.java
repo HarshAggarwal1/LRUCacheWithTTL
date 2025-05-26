@@ -40,7 +40,14 @@ public class LRUCache implements CacheInterface {
         this.head.setNext(this.tail);
         this.tail.setPrev(this.head);
 
-        this.executorService = Executors.newSingleThreadScheduledExecutor();
+        this.executorService = Executors.newSingleThreadScheduledExecutor(
+                thread -> {
+                    Thread t = new Thread(thread, "LRUCache-Expiration-Thread");
+                    // I have made this thread a daemon thread, as it runs in the background
+                    t.setDaemon(true);
+                    return t;
+                }
+        );
         this.executorService.scheduleAtFixedRate(
                 new Runnable() {
                     @Override
