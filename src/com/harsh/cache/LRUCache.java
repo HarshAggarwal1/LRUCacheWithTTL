@@ -87,6 +87,8 @@ public class LRUCache implements CacheInterface {
         prevNode.setNext(nextNode);
         nextNode.setPrev(prevNode);
     }
+
+    @Override
     public synchronized Object getItem(int key) {
         Node node = this.cacheMap.get(key);
         if (node == null) {
@@ -100,6 +102,7 @@ public class LRUCache implements CacheInterface {
             return node.getItem().getValue();
         }
     }
+    @Override
     public synchronized void addItem(int key, Object value, long TTL) {
         Node node = this.cacheMap.get(key);
         if (node != null) {
@@ -121,6 +124,7 @@ public class LRUCache implements CacheInterface {
         this.cacheMap.put(key, node);
         LRUCache.currentTime.getAndIncrement();
     }
+    @Override
     public synchronized void deleteItem(int key) {
         Node node = this.cacheMap.get(key);
         if (node != null) {
@@ -128,6 +132,7 @@ public class LRUCache implements CacheInterface {
             this.cacheMap.remove(key);
         }
     }
+
     public synchronized void removeExpiredItems() {
         Node currentNode = this.head.getNext();
         while (currentNode != this.tail) {
@@ -147,6 +152,7 @@ public class LRUCache implements CacheInterface {
         this.executorService.shutdown();
     }
 
+    @Override
     public synchronized String toString() {
         StringBuilder sb = new StringBuilder();
         Node currentNode = this.head.getNext();
