@@ -20,16 +20,16 @@ public class Node {
 
     // getters
     public int getKey() {
-        return key;
+        return this.key;
     }
     public Item getItem() {
-        return item;
+        return this.item;
     }
     public Node getNext() {
-        return next;
+        return this.next;
     }
     public Node getPrev() {
-        return prev;
+        return this.prev;
     }
 
     // setters

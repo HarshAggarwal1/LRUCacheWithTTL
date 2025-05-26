@@ -7,16 +7,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class LRUCache implements CacheInterface {
 
     // static variables
-    private static long currentTime = 0;
+    private static final AtomicLong currentTime = new AtomicLong(0);
 
     // hits, misses, and evictions
-    private volatile int hits = 0;
-    private volatile int misses = 0;
-    private volatile int evictions = 0;
+    private final AtomicInteger hits = new AtomicInteger(0);
+    private final AtomicInteger misses = new AtomicInteger(0);
+    private final AtomicInteger evictions = new AtomicInteger(0);
 
     // fields
     private final int capacity;
@@ -35,11 +37,11 @@ public class LRUCache implements CacheInterface {
         this.head = new Node(-1, new Item(-1, -1));
         this.tail = new Node(-1, new Item(-1, -1));
 
-        head.setNext(tail);
-        tail.setPrev(head);
+        this.head.setNext(this.tail);
+        this.tail.setPrev(this.head);
 
-        executorService = Executors.newSingleThreadScheduledExecutor();
-        executorService.scheduleAtFixedRate(
+        this.executorService = Executors.newSingleThreadScheduledExecutor();
+        this.executorService.scheduleAtFixedRate(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -53,23 +55,23 @@ public class LRUCache implements CacheInterface {
     }
 
     // getters
-    public synchronized int getHits() {
-        return hits;
+    public int getHits() {
+        return this.hits.get();
     }
-    public synchronized int getMisses() {
-        return misses;
+    public int getMisses() {
+        return this.misses.get();
     }
-    public synchronized int getEvictions() {
-        return evictions;
+    public int getEvictions() {
+        return this.evictions.get();
     }
 
     // methods
     private void addNode(Node node) {
-        node.setNext(head.getNext());
-        node.setPrev(head);
+        node.setNext(this.head.getNext());
+        node.setPrev(this.head);
 
-        head.getNext().setPrev(node);
-        head.setNext(node);
+        this.head.getNext().setPrev(node);
+        this.head.setNext(node);
     }
     private void removeNode(Node node) {
         Node prevNode = node.getPrev();
@@ -79,55 +81,54 @@ public class LRUCache implements CacheInterface {
         nextNode.setPrev(prevNode);
     }
     public synchronized Object getItem(int key) {
-        Node node = cacheMap.get(key);
+        Node node = this.cacheMap.get(key);
         if (node == null) {
-            misses++;
+            this.misses.getAndIncrement();
             return null;
         }
         else {
-            hits++;
+            this.hits.getAndIncrement();
             removeNode(node);
             addNode(node);
             return node.getItem().getValue();
         }
     }
     public synchronized void addItem(int key, Object value, long TTL) {
-        LRUCache.currentTime++;
-
-        Node node = cacheMap.get(key);
+        Node node = this.cacheMap.get(key);
         if (node != null) {
             removeNode(node);
-            cacheMap.remove(key);
+            this.cacheMap.remove(key);
         }
         else {
-            if (cacheMap.size() >= capacity) {
-                evictions++;
-                Node lastNode = tail.getPrev();
+            if (this.cacheMap.size() >= this.capacity) {
+                this.evictions.getAndIncrement();
+                Node lastNode = this.tail.getPrev();
                 removeNode(lastNode);
-                cacheMap.remove(lastNode.getKey());
+                this.cacheMap.remove(lastNode.getKey());
             }
         }
-        Item item = new Item(value, LRUCache.currentTime + TTL);
+        Item item = new Item(value, LRUCache.currentTime.get() + TTL);
         node = new Node(key, item);
 
         addNode(node);
-        cacheMap.put(key, node);
+        this.cacheMap.put(key, node);
+        LRUCache.currentTime.getAndIncrement();
     }
     public synchronized void deleteItem(int key) {
-        Node node = cacheMap.get(key);
+        Node node = this.cacheMap.get(key);
         if (node != null) {
             removeNode(node);
-            cacheMap.remove(key);
+            this.cacheMap.remove(key);
         }
     }
     public synchronized void removeExpiredItems() {
-        Node currentNode = head.getNext();
-        while (currentNode != tail) {
-            if (currentNode.getItem().getTTL() <= LRUCache.currentTime) {
+        Node currentNode = this.head.getNext();
+        while (currentNode != this.tail) {
+            if (currentNode.getItem().getTTL() <= LRUCache.currentTime.get()) {
                 Node nextNode = currentNode.getNext();
                 removeNode(currentNode);
-                cacheMap.remove(currentNode.getKey());
-                evictions++;
+                this.cacheMap.remove(currentNode.getKey());
+                this.evictions.getAndIncrement();
                 currentNode = nextNode;
             }
             else {
@@ -136,13 +137,13 @@ public class LRUCache implements CacheInterface {
         }
     }
     public void shutdown() {
-        executorService.shutdown();
+        this.executorService.shutdown();
     }
 
-    public String toString() {
+    public synchronized String toString() {
         StringBuilder sb = new StringBuilder();
-        Node currentNode = head.getNext();
-        while (currentNode != tail) {
+        Node currentNode = this.head.getNext();
+        while (currentNode != this.tail) {
             sb.append("Key: ").append(currentNode.getKey())
               .append(", Value: ").append(currentNode.getItem().getValue())
               .append(", TTL: ").append(currentNode.getItem().getTTL())

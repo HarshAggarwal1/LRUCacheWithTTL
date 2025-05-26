@@ -14,10 +14,10 @@ public class Item {
 
     // getters
     public Object getValue() {
-        return value;
+        return this.value;
     }
     public long getTTL() {
-        return TTL;
+        return this.TTL;
     }
 
 }

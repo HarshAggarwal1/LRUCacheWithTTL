@@ -15,44 +15,44 @@ public class Cache {
 
     // methods
     public Object getItem(int key) {
-        return cache.getItem(key);
+        return this.cache.getItem(key);
     }
     public void addItem(int key, Object value, long TTL) {
-        cache.addItem(key, value, TTL);
+        this.cache.addItem(key, value, TTL);
     }
     public void deleteItem(int key) {
-        cache.deleteItem(key);
+        this.cache.deleteItem(key);
     }
 
     public int getHits() {
-        if (cache instanceof LRUCache) {
-            return ((LRUCache) cache).getHits();
+        if (this.cache instanceof LRUCache) {
+            return ((LRUCache) this.cache).getHits();
         }
         return 0;
     }
     public int getMisses() {
-        if (cache instanceof LRUCache) {
-            return ((LRUCache) cache).getMisses();
+        if (this.cache instanceof LRUCache) {
+            return ((LRUCache) this.cache).getMisses();
         }
         return 0;
     }
     public int getEvictions() {
-        if (cache instanceof LRUCache) {
-            return ((LRUCache) cache).getEvictions();
+        if (this.cache instanceof LRUCache) {
+            return ((LRUCache) this.cache).getEvictions();
         }
         return 0;
     }
 
     public void shutdown() {
-        if (cache instanceof LRUCache) {
-            ((LRUCache) cache).shutdown();
+        if (this.cache instanceof LRUCache) {
+            ((LRUCache) this.cache).shutdown();
         }
     }
 
     @Override
     public String toString() {
         return "Cache{" +
-                "cache=" + cache +
+                "cache=" + this.cache +
                 '}';
     }
 }
